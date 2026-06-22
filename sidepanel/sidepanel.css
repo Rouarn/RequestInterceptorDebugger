@@ -863,42 +863,10 @@ body {
   line-height: 1.6;
 }
 
-/* ===== JSON 树形视图 ===== */
-.json-group {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.7;
-}
-
-.json-node {
-  display: flex;
-  align-items: flex-start;
-  gap: 0;
-  white-space: nowrap;
-}
-
-.json-spacer {
-  display: inline-block;
-  width: 16px;
-  flex-shrink: 0;
-}
-
-.json-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 17px;
-  font-size: 10px;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  flex-shrink: 0;
-  user-select: none;
-  transition: color 0.15s;
-}
-
-.json-toggle:hover {
-  color: var(--primary);
+/* ===== JSON 视图（简洁版） ===== */
+.json-line {
+  padding-left: 16px;
+  line-height: 1.6;
 }
 
 .json-key {
@@ -933,39 +901,34 @@ body {
 
 .json-bracket {
   color: var(--text-base);
-  font-weight: 500;
-}
-
-.json-bracket-root {
-  color: var(--text-base);
   font-weight: 600;
-  font-size: 13px;
-}
-
-.json-root {
-  gap: 4px;
-  margin-bottom: 2px;
-}
-
-.json-count {
-  color: var(--text-tertiary);
-  font-size: 11px;
-  margin-left: 6px;
-}
-
-.json-ellipsis {
-  color: var(--text-tertiary);
-  font-size: 11px;
 }
 
 .json-children {
-  margin: 2px 0;
+  margin: 0;
+  padding-left: 8px;
+  border-left: 1px solid var(--border-base);
 }
 
-.json-collapsible {
-  margin: 1px 0;
+/* details/summary 折叠 */
+.json-details {
+  margin: 0;
+  padding: 0;
 }
 
-.json-collapsed-preview {
-  cursor: default;
+.json-summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 2px 0;
+  user-select: none;
+}
+
+.json-summary:hover {
+  color: var(--primary);
+}
+
+.json-summary::-webkit-details-marker {
+  display: none;
 }
