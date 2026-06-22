@@ -52,6 +52,16 @@
     }
   });
 
+  /**
+   * 加载完成后通知 content script 本拦截器已就绪，请求同步当前规则。
+   * 解决页面刷新时的竞态条件：content script 的 GET_RULES 响应
+   * 可能在 interceptor.js 加载完成前就到达，导致 UPDATE_RULES 消息丢失。
+   */
+  window.postMessage({
+    source: 'request-interceptor-main',
+    type: 'READY'
+  }, '*');
+
   /* ===== 规则匹配引擎 ===== */
 
   /**

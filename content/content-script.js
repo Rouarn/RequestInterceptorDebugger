@@ -37,6 +37,34 @@
   (document.head || document.documentElement).appendChild(script);
 
   /**
+   * 向 interceptor.js 发送当前规则。
+   */
+  function sendRulesToInterceptor() {
+    window.postMessage({
+      source: 'request-interceptor-content',
+      type: 'UPDATE_RULES',
+      rules: rules
+    }, '*');
+  }
+
+  /**
+   * 安全地向 background 发送消息。
+   * 当扩展重新加载时，chrome.runtime 会失效，需要捕获异常避免报错。
+   *
+   * @param {Object} message - 要发送的消息
+   * @param {Function} [callback] - 可选的回调函数
+   */
+  function safeSendMessage(message, callback) {
+    try {
+      if (chrome.runtime && chrome.runtime.id) {
+        chrome.runtime.sendMessage(message, callback);
+      }
+    } catch (e) {
+      // 扩展上下文已失效（Extension context invalidated），静默忽略
+    }
+  }
+
+  /**
    * 步骤 2：监听来自 background 的消息。
    * 当规则发生变化时（RULES_UPDATED），将最新的规则列表
    * 通过 window.postMessage 转发给页面内的 interceptor.js。
@@ -46,11 +74,7 @@
       rules = message.rules;
       // 通过 postMessage 发送到页面主世界
       // source 字段用于标识消息来源，interceptor.js 会过滤非本扩展的消息
-      window.postMessage({
-        source: 'request-interceptor-content',
-        type: 'UPDATE_RULES',
-        rules: rules
-      }, '*');
+      sendRulesToInterceptor();
     }
     // 对请求相关消息简单确认收到
     if (message.type === 'NEW_REQUEST' || message.type === 'REQUESTS_CLEARED') {
@@ -71,9 +95,14 @@
     if (event.source !== window) return;
     if (event.data && event.data.source === 'request-interceptor-main') {
       switch (event.data.type) {
+        // interceptor.js 加载完成，发送当前规则
+        case 'READY':
+          sendRulesToInterceptor();
+          break;
+
         // 页面内脚本上报了被拦截的请求
         case 'REQUEST_INTERCEPTED':
-          chrome.runtime.sendMessage({
+          safeSendMessage({
             type: 'REQUEST_INTERCEPTED',
             data: event.data.request
           });
@@ -81,7 +110,7 @@
 
         // 页面内脚本请求清空请求记录
         case 'REQUESTS_CLEARED':
-          chrome.runtime.sendMessage({
+          safeSendMessage({
             type: 'CLEAR_REQUESTS'
           });
           break;
@@ -92,15 +121,43 @@
   /**
    * 步骤 4：初始化 - 向 background 请求当前规则列表。
    * 确保页面加载后 interceptor.js 能立即获得最新的规则。
+   * 同时设置定时重试，防止 GET_RULES 响应在 interceptor.js 加载前到达导致丢失。
    */
-  chrome.runtime.sendMessage({ type: 'GET_RULES' }, (response) => {
-    if (response && response.rules) {
-      rules = response.rules;
-      window.postMessage({
-        source: 'request-interceptor-content',
-        type: 'UPDATE_RULES',
-        rules: rules
-      }, '*');
+  function fetchAndSendRules() {
+    safeSendMessage({ type: 'GET_RULES' }, (response) => {
+      if (response && response.rules) {
+        rules = response.rules;
+        sendRulesToInterceptor();
+      }
+    });
+  }
+
+  // 立即请求规则
+  fetchAndSendRules();
+
+  // 定时重试，确保规则最终同步到 interceptor.js
+  // 即使首次 GET_RULES 的响应在 interceptor.js 加载前到达（消息丢失），
+  // 后续重试也能成功发送规则
+  let retryCount = 0;
+  const maxRetries = 10;
+  const retryInterval = setInterval(() => {
+    retryCount++;
+    sendRulesToInterceptor();
+    if (retryCount >= maxRetries) {
+      clearInterval(retryInterval);
+    }
+  }, 100);
+
+  /**
+   * 步骤 5：监听 chrome.storage 变化，加速规则同步。
+   * 当 background 调用 saveRules() 将规则写入 storage 时，
+   * 此监听器会立即检测到变化并转发给 interceptor.js，
+   * 避免依赖 chrome.runtime.onMessage 异步回调导致的规则同步延迟。
+   */
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local' && changes.interceptRules) {
+      rules = changes.interceptRules.newValue || [];
+      sendRulesToInterceptor();
     }
   });
 })();
