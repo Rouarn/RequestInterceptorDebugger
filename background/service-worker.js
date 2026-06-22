@@ -136,9 +136,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
      */
     case 'REQUEST_INTERCEPTED':
       const request = {
-        /** 使用时间戳+随机数生成短唯一 ID */
         id: Date.now().toString(36) + Math.random().toString(36).substr(2),
         url: message.data.url,
+        finalUrl: message.data.finalUrl || message.data.url,
         method: message.data.method,
         type: message.data.type,
         status: message.data.status,
@@ -150,7 +150,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         duration: message.data.duration,
         timestamp: message.data.timestamp,
         intercepted: message.data.intercepted,
-        ruleId: message.data.ruleId
+        ruleId: message.data.ruleId,
+        action: message.data.action || null
       };
       capturedRequests.unshift(request);
       // 内存中最多保留 500 条请求记录，防止内存溢出
@@ -171,6 +172,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       broadcastToSidePanel({ type: 'REQUESTS_CLEARED' });
       sendResponse({ success: true });
       break;
+
+    /**
+     * 代理 fetch 请求（绕过页面 CORS 限制）。
+     * service worker 的 fetch 不受页面的 CORS 策略约束。
+     */
+    case 'PROXY_FETCH':
+      handleProxyFetch(message, sendResponse);
+      return true; // 异步响应
   }
   // 返回 true 告知 Chrome：sendResponse 将异步调用（或已在同步阶段调用）
   return true;
@@ -247,5 +256,46 @@ function updateBadge() {
     chrome.action.setBadgeBackgroundColor({ color: '#4CAF50' });
   } else {
     chrome.action.setBadgeText({ text: '' });
+  }
+}
+
+/* ===== 代理请求处理 ===== */
+
+/**
+ * 处理代理 fetch 请求。
+ * service worker 运行在扩展上下文中，其 fetch 请求不受页面 CORS 策略限制。
+ *
+ * @param {Object} message - 消息对象 {url, options}
+ * @param {Function} sendResponse - 响应回调
+ */
+async function handleProxyFetch(message, sendResponse) {
+  const { url, options } = message;
+  try {
+    const fetchOptions = {
+      method: options.method || 'GET',
+      headers: options.headers || {}
+    };
+    if (options.body && options.method !== 'GET' && options.method !== 'HEAD') {
+      fetchOptions.body = options.body;
+    }
+    const response = await fetch(url, fetchOptions);
+    const headers = {};
+    response.headers.forEach((value, key) => { headers[key] = value; });
+    let body = '';
+    try { body = await response.text(); } catch (e) { body = ''; }
+    sendResponse({
+      success: true,
+      data: {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+        body
+      }
+    });
+  } catch (error) {
+    sendResponse({
+      success: false,
+      error: error.message || 'Proxy fetch failed'
+    });
   }
 }

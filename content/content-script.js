@@ -114,9 +114,37 @@
             type: 'CLEAR_REQUESTS'
           });
           break;
+
+        // 页面内脚本请求代理发送（绕过 CORS）
+        case 'PROXY_REQUEST':
+          handleProxyRequest(event.data);
+          break;
       }
     }
   });
+
+  /**
+   * 处理代理请求：转发给 background service worker 执行
+   */
+  function handleProxyRequest(proxyData) {
+    const { requestId, url, options } = proxyData;
+    safeSendMessage({
+      type: 'PROXY_FETCH',
+      requestId,
+      url,
+      options
+    }, (response) => {
+      // 将代理结果返回给 interceptor.js
+      window.postMessage({
+        source: 'request-interceptor-content',
+        type: 'PROXY_RESPONSE',
+        requestId,
+        success: response && response.success,
+        data: response ? response.data : null,
+        error: response ? response.error : 'No response from background'
+      }, '*');
+    });
+  }
 
   /**
    * 步骤 4：初始化 - 向 background 请求当前规则列表。

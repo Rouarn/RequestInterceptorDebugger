@@ -748,15 +748,38 @@ $(function() {
 
     switch (currentDetailTab) {
       case 'overview':
-        $container.html(
-          '<div class="detail-row"><span class="detail-label">方法</span><span class="detail-value">' + req.method + '</span></div>' +
-          '<div class="detail-row"><span class="detail-label">URL</span><span class="detail-value">' + escapeHtml(req.url) + '</span></div>' +
-          '<div class="detail-row"><span class="detail-label">状态</span><span class="detail-value">' + req.status + ' ' + req.statusText + '</span></div>' +
-          '<div class="detail-row"><span class="detail-label">耗时</span><span class="detail-value">' + req.duration + 'ms</span></div>' +
-          '<div class="detail-row"><span class="detail-label">类型</span><span class="detail-value">' + req.type + '</span></div>' +
-          '<div class="detail-row"><span class="detail-label">拦截</span><span class="detail-value">' + (req.intercepted ? '是' : '否') + '</span></div>' +
-          '<div class="detail-row"><span class="detail-label">时间</span><span class="detail-value">' + formatTime(req.timestamp) + '</span></div>'
-        );
+        let overviewHtml = '';
+        // 重定向标注重置在URL行下方，如果有重定向则显示
+        const hasRedirect = req.finalUrl && req.finalUrl !== req.url;
+        const isRedirectAction = req.action === 'redirect';
+        
+        overviewHtml += '<div class="detail-row"><span class="detail-label">方法</span><span class="detail-value">' + req.method + '</span></div>';
+        
+        if (hasRedirect) {
+          // 有重定向时，显示原始URL和重定向目标
+          overviewHtml += '<div class="detail-row"><span class="detail-label">原始 URL</span><span class="detail-value" style="color: var(--text-secondary); text-decoration: line-through;">' + escapeHtml(req.url) + '</span></div>';
+          overviewHtml += '<div class="detail-row"><span class="detail-label">重定向到</span><span class="detail-value" style="color: var(--primary); font-weight: 500;">→ ' + escapeHtml(req.finalUrl) + '</span></div>';
+        } else {
+          overviewHtml += '<div class="detail-row"><span class="detail-label">URL</span><span class="detail-value">' + escapeHtml(req.url) + '</span></div>';
+        }
+        
+        overviewHtml += '<div class="detail-row"><span class="detail-label">状态</span><span class="detail-value">' + req.status + ' ' + req.statusText + '</span></div>';
+        overviewHtml += '<div class="detail-row"><span class="detail-label">耗时</span><span class="detail-value">' + req.duration + 'ms</span></div>';
+        overviewHtml += '<div class="detail-row"><span class="detail-label">类型</span><span class="detail-value">' + req.type + '</span></div>';
+        overviewHtml += '<div class="detail-row"><span class="detail-label">拦截</span><span class="detail-value">' + (req.intercepted ? '是' : '否') + '</span></div>';
+        
+        // 显示拦截动作类型
+        if (isRedirectAction) {
+          overviewHtml += '<div class="detail-row"><span class="detail-label">动作</span><span class="detail-value" style="color: var(--primary);">🔀 重定向 (通过代理)</span></div>';
+        } else if (req.action === 'mock') {
+          overviewHtml += '<div class="detail-row"><span class="detail-label">动作</span><span class="detail-value" style="color: var(--warning);">🎭 Mock 模拟</span></div>';
+        } else if (req.action === 'modify') {
+          overviewHtml += '<div class="detail-row"><span class="detail-label">动作</span><span class="detail-value" style="color: var(--info);">✏️ 修改请求</span></div>';
+        }
+        
+        overviewHtml += '<div class="detail-row"><span class="detail-label">时间</span><span class="detail-value">' + formatTime(req.timestamp) + '</span></div>';
+        
+        $container.html(overviewHtml);
         break;
 
       case 'headers':
