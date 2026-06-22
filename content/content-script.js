@@ -121,7 +121,6 @@
   /**
    * 步骤 4：初始化 - 向 background 请求当前规则列表。
    * 确保页面加载后 interceptor.js 能立即获得最新的规则。
-   * 同时设置定时重试，防止 GET_RULES 响应在 interceptor.js 加载前到达导致丢失。
    */
   function fetchAndSendRules() {
     safeSendMessage({ type: 'GET_RULES' }, (response) => {
@@ -135,14 +134,12 @@
   // 立即请求规则
   fetchAndSendRules();
 
-  // 定时重试，确保规则最终同步到 interceptor.js
-  // 即使首次 GET_RULES 的响应在 interceptor.js 加载前到达（消息丢失），
-  // 后续重试也能成功发送规则
+  // 定时重试：每次重新从 SW 获取规则，而非重复发送可能为空的本地缓存
   let retryCount = 0;
   const maxRetries = 10;
   const retryInterval = setInterval(() => {
     retryCount++;
-    sendRulesToInterceptor();
+    fetchAndSendRules();
     if (retryCount >= maxRetries) {
       clearInterval(retryInterval);
     }

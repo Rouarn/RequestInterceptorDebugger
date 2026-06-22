@@ -32,37 +32,37 @@
 /* ===== CSS 自定义属性（设计令牌） ===== */
 :root {
   /* 主色调（绿色系） */
-  --primary: #18a058;              /* 主色 */
-  --primary-hover: #36ad6a;        /* 悬停态 */
-  --primary-pressed: #0c7a43;      /* 按下态 */
-  --primary-bg: rgba(24, 160, 88, 0.08);       /* 主色背景（浅） */
+  --primary: #18a058; /* 主色 */
+  --primary-hover: #36ad6a; /* 悬停态 */
+  --primary-pressed: #0c7a43; /* 按下态 */
+  --primary-bg: rgba(24, 160, 88, 0.08); /* 主色背景（浅） */
   --primary-bg-hover: rgba(24, 160, 88, 0.15); /* 主色背景（中） */
 
   /* 背景色 */
-  --bg-base: #ffffff;       /* 基础背景 */
-  --bg-container: #f8f9fa;  /* 容器背景 */
-  --bg-elevated: #ffffff;   /* 浮层背景 */
-  --bg-inset: #f1f3f5;      /* 内嵌背景 */
-  --bg-code: #f4f5f7;       /* 代码块背景 */
+  --bg-base: #ffffff; /* 基础背景 */
+  --bg-container: #f8f9fa; /* 容器背景 */
+  --bg-elevated: #ffffff; /* 浮层背景 */
+  --bg-inset: #f1f3f5; /* 内嵌背景 */
+  --bg-code: #f4f5f7; /* 代码块背景 */
 
   /* 文字色 */
-  --text-base: #212529;      /* 主要文字 */
+  --text-base: #212529; /* 主要文字 */
   --text-secondary: #6c757d; /* 次要文字 */
-  --text-tertiary: #adb5bd;  /* 辅助文字 */
-  --text-inverse: #ffffff;   /* 反色文字 */
+  --text-tertiary: #adb5bd; /* 辅助文字 */
+  --text-inverse: #ffffff; /* 反色文字 */
 
   /* 边框色 */
-  --border-base: #e9ecef;   /* 基础边框 */
+  --border-base: #e9ecef; /* 基础边框 */
   --border-strong: #dee2e6; /* 加强边框 */
 
   /* 语义色 */
-  --success: #18a058;        /* 成功/2xx */
+  --success: #18a058; /* 成功/2xx */
   --success-bg: rgba(24, 160, 88, 0.08);
-  --warning: #f0a020;        /* 警告/3xx */
+  --warning: #f0a020; /* 警告/3xx */
   --warning-bg: rgba(240, 160, 32, 0.08);
-  --error: #d03050;          /* 错误/4xx/5xx */
+  --error: #d03050; /* 错误/4xx/5xx */
   --error-bg: rgba(208, 48, 80, 0.08);
-  --info: #2080f0;           /* 信息/PUT */
+  --info: #2080f0; /* 信息/PUT */
   --info-bg: rgba(32, 128, 240, 0.08);
 
   /* 阴影 */
@@ -348,11 +348,26 @@ body {
   flex-shrink: 0;
 }
 
-.method-get { background: var(--success-bg); color: var(--success); }
-.method-post { background: var(--warning-bg); color: #c07a00; }
-.method-put { background: var(--info-bg); color: var(--info); }
-.method-delete { background: var(--error-bg); color: var(--error); }
-.method-patch { background: rgba(128, 0, 128, 0.08); color: #800080; }
+.method-get {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.method-post {
+  background: var(--warning-bg);
+  color: #c07a00;
+}
+.method-put {
+  background: var(--info-bg);
+  color: var(--info);
+}
+.method-delete {
+  background: var(--error-bg);
+  color: var(--error);
+}
+.method-patch {
+  background: rgba(128, 0, 128, 0.08);
+  color: #800080;
+}
 
 /* 请求 URL（等宽字体，超长截断） */
 .request-url {
@@ -374,10 +389,22 @@ body {
   flex-shrink: 0;
 }
 
-.status-2xx { background: var(--success-bg); color: var(--success); }
-.status-3xx { background: var(--warning-bg); color: #c07a00; }
-.status-4xx { background: var(--error-bg); color: var(--error); }
-.status-5xx { background: var(--error-bg); color: var(--error); }
+.status-2xx {
+  background: var(--success-bg);
+  color: var(--success);
+}
+.status-3xx {
+  background: var(--warning-bg);
+  color: #c07a00;
+}
+.status-4xx {
+  background: var(--error-bg);
+  color: var(--error);
+}
+.status-5xx {
+  background: var(--error-bg);
+  color: var(--error);
+}
 
 /* 请求耗时 */
 .request-duration {
@@ -452,6 +479,10 @@ body {
 }
 
 .rule-name {
+  width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 600;
   font-size: 13px;
   color: var(--text-base);
@@ -530,8 +561,12 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal.hidden {
@@ -552,13 +587,25 @@ body {
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes toastIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-header {

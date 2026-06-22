@@ -17,6 +17,14 @@ let rules = [];
 /** @type {Array<Object>} 已捕获的请求记录列表，最多保留 500 条 */
 let capturedRequests = [];
 
+/* ===== 启动时立即加载规则 ===== */
+
+/**
+ * Service Worker 可能被 Chrome 终止后重启，此时内存中的 rules 为空。
+ * 在脚本顶层直接调用 loadRules()，确保处理第一条消息前规则已就绪。
+ */
+loadRules();
+
 /* ===== 生命周期事件 ===== */
 
 /**
