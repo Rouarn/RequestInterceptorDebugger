@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vakao - 网页请求拦截与调试工具</title>
+    <link rel="stylesheet" href="./sidepanel.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <h1>Vakao - 网页请求拦截与调试工具</h1>
+        <div class="header-actions">
+          <button id="clearRequests" class="btn btn-icon" title="清空请求">
+            <svg
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"
+              />
+            </svg>
+          </button>
+          <button id="openRules" class="btn btn-primary">规则管理</button>
+        </div>
+      </header>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="requests">请求列表</button>
+        <button class="tab" data-tab="rules">拦截规则</button>
+      </div>
+
+      <div id="requestsPanel" class="panel active">
+        <div class="filter-bar">
+          <input
+            type="text"
+            id="filterUrl"
+            placeholder="过滤 URL..."
+            class="input"
+          />
+          <select id="filterMethod" class="select">
+            <option value="">所有方法</option>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+            <option value="PATCH">PATCH</option>
+          </select>
+          <select id="filterStatus" class="select">
+            <option value="">所有状态</option>
+            <option value="2xx">2xx</option>
+            <option value="3xx">3xx</option>
+            <option value="4xx">4xx</option>
+            <option value="5xx">5xx</option>
+          </select>
+        </div>
+        <div id="requestList" class="request-list">
+          <div class="empty-state">暂无捕获的请求</div>
+        </div>
+      </div>
+
+      <div id="rulesPanel" class="panel">
+        <div class="rules-header">
+          <button id="addRule" class="btn btn-primary">+ 添加规则</button>
+          <div class="rules-actions">
+            <button id="importRules" class="btn btn-secondary">导入</button>
+            <button id="exportRules" class="btn btn-secondary">导出</button>
+          </div>
+        </div>
+        <div id="ruleList" class="rule-list">
+          <div class="empty-state">暂无拦截规则</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="requestDetail" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>请求详情</h2>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="detail-tabs">
+            <button class="detail-tab active" data-detail-tab="overview">
+              概览
+            </button>
+            <button class="detail-tab" data-detail-tab="headers">请求头</button>
+            <button class="detail-tab" data-detail-tab="body">请求体</button>
+            <button class="detail-tab" data-detail-tab="response">响应</button>
+          </div>
+          <div id="detailContent" class="detail-content"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="mockFromRequest" class="btn btn-primary">Mock 此请求</button>
+          <button id="modifyFromRequest" class="btn btn-primary">修改此请求</button>
+          <button id="copyCurl" class="btn btn-secondary">Copy as cURL</button>
+          <button id="copyResponse" class="btn btn-secondary">复制响应</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="ruleModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="ruleModalTitle">添加规则</h2>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="ruleForm">
+            <input type="hidden" id="ruleId" />
+            <div class="form-group">
+              <label for="ruleName">规则名称</label>
+              <input
+                type="text"
+                id="ruleName"
+                class="input"
+                required
+                placeholder="例如：Mock 用户接口"
+              />
+            </div>
+            <div class="form-group">
+              <label for="ruleUrlPattern">URL 匹配模式</label>
+              <input
+                type="text"
+                id="ruleUrlPattern"
+                class="input"
+                required
+                placeholder="例如：/api/user 或 https://example.com/api/*"
+              />
+            </div>
+            <div class="form-group">
+              <label for="ruleMatchType">匹配类型</label>
+              <select id="ruleMatchType" class="select">
+                <option value="contains">包含</option>
+                <option value="regex">正则表达式</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="ruleMethods">HTTP 方法（可多选）</label>
+              <div class="checkbox-group">
+                <label
+                  ><input type="checkbox" name="method" value="GET" checked />
+                  GET</label
+                >
+                <label
+                  ><input type="checkbox" name="method" value="POST" checked />
+                  POST</label
+                >
+                <label
+                  ><input type="checkbox" name="method" value="PUT" checked />
+                  PUT</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    name="method"
+                    value="DELETE"
+                    checked
+                  />
+                  DELETE</label
+                >
+                <label
+                  ><input type="checkbox" name="method" value="PATCH" checked />
+                  PATCH</label
+                >
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="ruleAction">拦截动作</label>
+              <select id="ruleAction" class="select">
+                <option value="mock">Mock 响应</option>
+                <option value="modify">修改请求</option>
+                <option value="redirect">重定向</option>
+              </select>
+            </div>
+            <div id="mockSection" class="action-section">
+              <div class="form-group">
+                <label for="mockStatus">响应状态码</label>
+                <input
+                  type="number"
+                  id="mockStatus"
+                  class="input"
+                  value="200"
+                  min="100"
+                  max="599"
+                />
+              </div>
+              <div class="form-group">
+                <label for="mockBody">响应体（JSON）</label>
+                <textarea
+                  id="mockBody"
+                  class="textarea"
+                  rows="6"
+                  placeholder='{"code": 0, "message": "success", "data": {}}'
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label for="mockHeaders">响应头（JSON）</label>
+                <textarea
+                  id="mockHeaders"
+                  class="textarea"
+                  rows="3"
+                  placeholder='{"Content-Type": "application/json"}'
+                ></textarea>
+              </div>
+            </div>
+            <div id="modifySection" class="action-section hidden">
+              <div class="form-group">
+                <label for="modifyQuery">修改 Query 参数（JSON）</label>
+                <textarea
+                  id="modifyQuery"
+                  class="textarea"
+                  rows="3"
+                  placeholder='{"token": "xxx", "debug": "true"}'
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label for="modifyBody">修改请求体</label>
+                <textarea
+                  id="modifyBody"
+                  class="textarea"
+                  rows="4"
+                  placeholder="新的请求体内容"
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <label for="customHeaders">自定义请求头（JSON）</label>
+                <textarea
+                  id="customHeaders"
+                  class="textarea"
+                  rows="3"
+                  placeholder='{"Authorization": "Bearer new-token"}'
+                ></textarea>
+              </div>
+            </div>
+            <div id="redirectSection" class="action-section hidden">
+              <div class="form-group">
+                <label for="redirectUrl">重定向 URL</label>
+                <input
+                  type="text"
+                  id="redirectUrl"
+                  class="input"
+                  placeholder="http://localhost:3000/api/user"
+                />
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button id="saveRule" class="btn btn-primary">保存</button>
+          <button class="btn btn-secondary modal-close">取消</button>
+        </div>
+      </div>
+    </div>
+
+    <input
+      type="file"
+      id="importFileInput"
+      accept=".json"
+      style="display: none"
+    />
+
+    <script src="./sidepanel.js"></script>
+  </body>
+</html>
