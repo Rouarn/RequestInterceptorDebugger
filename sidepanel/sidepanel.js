@@ -572,9 +572,13 @@
 
   function showToast(message) {
     const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#4caf50;color:white;padding:12px 20px;border-radius:4px;font-size:13px;z-index:9999;';
+    toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#18a058;color:white;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 4px 12px rgba(24,160,88,0.3);animation:toastIn 0.2s ease;';
     toast.textContent = message;
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2000);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.2s ease';
+      setTimeout(() => toast.remove(), 200);
+    }, 2000);
   }
 })();
