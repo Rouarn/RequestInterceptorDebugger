@@ -568,6 +568,262 @@
     URL.revokeObjectURL(url); // 释放 Blob URL
   }
 
+  /* ===== 请求体渲染 ===== */
+
+  let bodyViewMode = 'parsed';
+  let responseViewMode = 'parsed';
+
+  /**
+   * 检查值是否包含嵌套的复杂结构（对象或数组）。
+   */
+  function hasNestedComplex(value) {
+    if (value === null || typeof value !== 'object') return false;
+    if (Array.isArray(value)) {
+      return value.some(item => item !== null && typeof item === 'object');
+    }
+    return Object.values(value).some(v => v !== null && typeof v === 'object');
+  }
+
+  /**
+   * 递归渲染 JSON 为带层级缩进的键值对 HTML。
+   * - 空对象/数组直接显示 {} 或 []
+   * - 数组只有一个对象时自动展开
+   * - 无嵌套的对象默认展开
+   */
+  function renderJsonTree(data, depth = 0) {
+    if (data === null) return '<span class="json-null">null</span>';
+    if (data === undefined) return '<span class="json-null">undefined</span>';
+    if (typeof data === 'boolean') return `<span class="json-bool">${data}</span>`;
+    if (typeof data === 'number') return `<span class="json-number">${data}</span>`;
+    if (typeof data === 'string') return `<span class="json-string">"${escapeHtml(data)}"</span>`;
+
+    const isArray = Array.isArray(data);
+    const entries = isArray ? data.map((v, i) => [i, v]) : Object.entries(data);
+    const count = entries.length;
+
+    if (count === 0) {
+      return `<span class="json-bracket">${isArray ? '[]' : '{}'}</span>`;
+    }
+
+    const id = 'jn_' + Math.random().toString(36).slice(2, 8);
+    const indent = depth * 16;
+    const openBracket = isArray ? '[' : '{';
+    const closeBracket = isArray ? ']' : '}';
+    const shouldAutoExpand = depth === 0 || !hasNestedComplex(data) || (isArray && count === 1);
+
+    const items = entries.map(([key, value]) => {
+      const isComplex = value !== null && typeof value === 'object';
+      const prefix = isArray ? `<span class="json-index">[${key}]</span>` : `<span class="json-key">"${escapeHtml(String(key))}"</span>`;
+      const connector = isComplex ? '' : ': ';
+
+      if (isComplex) {
+        const childEntries = Array.isArray(value) ? value : Object.values(value);
+        const childCount = childEntries.length;
+        const childEmpty = childCount === 0;
+        const childIsArray = Array.isArray(value);
+        const childOpen = childIsArray ? '[' : '{';
+        const childClose = childIsArray ? ']' : '}';
+        const childAutoExpand = !hasNestedComplex(value) || (childIsArray && childCount === 1);
+
+        if (childEmpty) {
+          return `
+            <div class="json-node">
+              <span class="json-spacer"></span>
+              ${prefix}<span class="json-colon">: </span><span class="json-bracket">${childIsArray ? '[]' : '{}'}</span>
+            </div>`;
+        }
+
+        if (childAutoExpand) {
+          return `
+            <div class="json-node">
+              <span class="json-spacer"></span>
+              ${prefix}<span class="json-colon">: </span>${renderJsonTree(value, depth + 1)}
+            </div>`;
+        }
+
+        return `
+          <div class="json-collapsible">
+            <div class="json-node json-collapsed-preview">
+              <span class="json-toggle" data-target="${id}_${key}">▶</span>
+              ${prefix}<span class="json-colon">: </span><span class="json-bracket">${childOpen}</span><span class="json-ellipsis">...${childCount} items</span><span class="json-bracket">${childClose}</span>
+            </div>
+            <div class="json-children" id="${id}_${key}" style="display:none;padding-left:16px;border-left:1px solid var(--border-base);margin-left:${indent + 7}px;">
+              ${renderJsonTree(value, depth + 1)}
+            </div>
+          </div>`;
+      } else {
+        return `
+          <div class="json-node">
+            <span class="json-spacer"></span>
+            ${prefix}<span class="json-colon">${connector}</span>${renderJsonTree(value, depth + 1)}
+          </div>`;
+      }
+    }).join('');
+
+    if (shouldAutoExpand) {
+      return `
+        <div class="json-group">
+          <div class="json-node">
+            <span class="json-spacer"></span><span class="json-bracket-root">${openBracket}</span>
+          </div>
+          <div class="json-children" style="padding-left:16px;border-left:1px solid var(--border-base);margin-left:${7}px;">
+            ${items}
+          </div>
+          <div class="json-node"><span class="json-spacer"></span><span class="json-bracket-root">${closeBracket}</span></div>
+        </div>`;
+    }
+
+    return `
+      <div class="json-group">
+        <div class="json-node json-root">
+          <span class="json-toggle json-toggle-root" data-target="${id}_root">▶</span>
+          <span class="json-bracket-root">${openBracket}</span>
+          <span class="json-count">${count} items</span>
+        </div>
+        <div class="json-children" id="${id}_root" style="display:none;padding-left:16px;border-left:1px solid var(--border-base);margin-left:7px;">
+          ${items}
+        </div>
+        <div class="json-node"><span class="json-spacer"></span><span class="json-bracket-root">${closeBracket}</span></div>
+      </div>`;
+  }
+
+  /**
+   * 渲染请求体内容，支持 parsed（层级树）和 raw（原始文本）两种视图。
+   */
+  function renderBodyContent(container, body) {
+    if (!body) {
+      container.innerHTML = '<div class="empty-state">无请求体</div>';
+      return;
+    }
+
+    const toggleHtml = `
+      <div class="body-toggle">
+        <button class="body-toggle-btn ${bodyViewMode === 'parsed' ? 'active' : ''}" data-view="parsed">解析</button>
+        <button class="body-toggle-btn ${bodyViewMode === 'raw' ? 'active' : ''}" data-view="raw">原始</button>
+      </div>
+    `;
+
+    if (bodyViewMode === 'raw') {
+      let rawContent = body;
+      try {
+        const parsed = JSON.parse(body);
+        rawContent = JSON.stringify(parsed, null, 2);
+      } catch (e) {}
+      container.innerHTML = toggleHtml + `<div class="body-raw">${escapeHtml(rawContent)}</div>`;
+    } else {
+      let parsed;
+      try {
+        parsed = JSON.parse(body);
+      } catch (e) {}
+
+      if (parsed !== undefined) {
+        container.innerHTML = toggleHtml + renderJsonTree(parsed);
+      } else {
+        // URL-encoded
+        const entries = parseUrlEncoded(body);
+        if (entries.length > 0) {
+          container.innerHTML = toggleHtml + entries.map(([key, value]) =>
+            `<div class="detail-row"><span class="detail-label">${escapeHtml(key)}</span><span class="detail-value">${escapeHtml(value)}</span></div>`
+          ).join('');
+        } else {
+          container.innerHTML = toggleHtml + `<div class="body-raw">${escapeHtml(body)}</div>`;
+        }
+      }
+    }
+
+    bindToggleEvents(container);
+
+    container.querySelectorAll('.body-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        bodyViewMode = btn.dataset.view;
+        renderBodyContent(container, body);
+      });
+    });
+  }
+
+  /**
+   * 渲染响应体内容，支持 parsed（层级树）和 raw（原始文本）两种视图。
+   */
+  function renderResponseContent(container, body) {
+    if (!body) {
+      container.innerHTML = '<div class="empty-state">无响应体</div>';
+      return;
+    }
+
+    const toggleHtml = `
+      <div class="body-toggle">
+        <button class="body-toggle-btn ${responseViewMode === 'parsed' ? 'active' : ''}" data-view="parsed">解析</button>
+        <button class="body-toggle-btn ${responseViewMode === 'raw' ? 'active' : ''}" data-view="raw">原始</button>
+      </div>
+    `;
+
+    if (responseViewMode === 'raw') {
+      let rawContent = body;
+      try {
+        const parsed = JSON.parse(body);
+        rawContent = JSON.stringify(parsed, null, 2);
+      } catch (e) {}
+      container.innerHTML = toggleHtml + `<div class="body-raw">${escapeHtml(rawContent)}</div>`;
+    } else {
+      let parsed;
+      try {
+        parsed = JSON.parse(body);
+      } catch (e) {}
+
+      if (parsed !== undefined) {
+        container.innerHTML = toggleHtml + renderJsonTree(parsed);
+      } else {
+        container.innerHTML = toggleHtml + `<div class="body-raw">${escapeHtml(body)}</div>`;
+      }
+    }
+
+    bindToggleEvents(container);
+
+    container.querySelectorAll('.body-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        responseViewMode = btn.dataset.view;
+        renderResponseContent(container, body);
+      });
+    });
+  }
+
+  /**
+   * 为容器内所有折叠按钮绑定展开/收起事件。
+   */
+  function bindToggleEvents(container) {
+    container.querySelectorAll('.json-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = document.getElementById(btn.dataset.target);
+        if (!target) return;
+        const visible = target.style.display !== 'none';
+        target.style.display = visible ? 'none' : '';
+        btn.textContent = visible ? '▶' : '▼';
+        const preview = btn.closest('.json-collapsible');
+        if (preview) {
+          const previewNode = preview.querySelector('.json-collapsed-preview');
+          if (previewNode) previewNode.style.display = visible ? '' : 'none';
+        }
+      });
+    });
+  }
+
+  /**
+   * 解析 URL-encoded 字符串为 [key, value] 数组。
+   */
+  function parseUrlEncoded(body) {
+    if (!body || !body.includes('=') || body.includes('{')) return [];
+    try {
+      const params = new URLSearchParams(body);
+      const entries = [];
+      for (const [k, v] of params) {
+        entries.push([k, v]);
+      }
+      return entries;
+    } catch (e) {
+      return [];
+    }
+  }
+
   /* ===== 请求详情弹窗 ===== */
 
   /**
@@ -622,19 +878,11 @@
         break;
 
       case 'body':
-        container.innerHTML = `<div class="detail-value">${escapeHtml(req.requestBody || '无请求体')}</div>`;
+        renderBodyContent(container, req.requestBody);
         break;
 
       case 'response':
-        let responseContent = '';
-        try {
-          // 尝试格式化 JSON 响应
-          const parsed = JSON.parse(req.responseBody);
-          responseContent = JSON.stringify(parsed, null, 2);
-        } catch (e) {
-          responseContent = req.responseBody || '无响应体';
-        }
-        container.innerHTML = `<div class="detail-value">${escapeHtml(responseContent)}</div>`;
+        renderResponseContent(container, req.responseBody);
         break;
     }
   }
