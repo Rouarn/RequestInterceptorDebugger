@@ -1,52 +1,87 @@
+/**
+ * sidepanel/sidepanel.css
+ *
+ * Vakao 扩展侧边栏面板的完整样式表。
+ * 采用 CSS 自定义属性（CSS Variables）实现主题化设计，
+ * 所有颜色、间距、圆角等值统一管理，便于后续适配暗色模式。
+ *
+ * 设计规范：
+ *   - 主色调：#18a058（绿色，与 Chrome DevTools 风格一致）
+ *   - 字体栈：系统字体优先，等宽字体用于代码/URL
+ *   - 间距基准：8px 网格系统
+ *   - 圆角：6px/8px/12px/16px 四级
+ *   - 阴影：三级深度（sm/md/lg）
+ *
+ * 组件结构：
+ *   - Header：顶部品牌栏 + 操作按钮
+ *   - Tabs：请求列表 / 拦截规则 切换
+ *   - Filter Bar：请求过滤栏
+ *   - Request List / Rule List：滚动列表
+ *   - Modal：通用弹窗（请求详情 + 规则编辑）
+ *   - Toggle Switch：规则启用/禁用开关
+ *   - Toast：临时提示消息
+ */
+
+/* ===== 全局重置 ===== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* ===== CSS 自定义属性（设计令牌） ===== */
 :root {
-  --primary: #18a058;
-  --primary-hover: #36ad6a;
-  --primary-pressed: #0c7a43;
-  --primary-bg: rgba(24, 160, 88, 0.08);
-  --primary-bg-hover: rgba(24, 160, 88, 0.15);
+  /* 主色调（绿色系） */
+  --primary: #18a058;              /* 主色 */
+  --primary-hover: #36ad6a;        /* 悬停态 */
+  --primary-pressed: #0c7a43;      /* 按下态 */
+  --primary-bg: rgba(24, 160, 88, 0.08);       /* 主色背景（浅） */
+  --primary-bg-hover: rgba(24, 160, 88, 0.15); /* 主色背景（中） */
 
-  --bg-base: #ffffff;
-  --bg-container: #f8f9fa;
-  --bg-elevated: #ffffff;
-  --bg-inset: #f1f3f5;
-  --bg-code: #f4f5f7;
+  /* 背景色 */
+  --bg-base: #ffffff;       /* 基础背景 */
+  --bg-container: #f8f9fa;  /* 容器背景 */
+  --bg-elevated: #ffffff;   /* 浮层背景 */
+  --bg-inset: #f1f3f5;      /* 内嵌背景 */
+  --bg-code: #f4f5f7;       /* 代码块背景 */
 
-  --text-base: #212529;
-  --text-secondary: #6c757d;
-  --text-tertiary: #adb5bd;
-  --text-inverse: #ffffff;
+  /* 文字色 */
+  --text-base: #212529;      /* 主要文字 */
+  --text-secondary: #6c757d; /* 次要文字 */
+  --text-tertiary: #adb5bd;  /* 辅助文字 */
+  --text-inverse: #ffffff;   /* 反色文字 */
 
-  --border-base: #e9ecef;
-  --border-strong: #dee2e6;
+  /* 边框色 */
+  --border-base: #e9ecef;   /* 基础边框 */
+  --border-strong: #dee2e6; /* 加强边框 */
 
-  --success: #18a058;
+  /* 语义色 */
+  --success: #18a058;        /* 成功/2xx */
   --success-bg: rgba(24, 160, 88, 0.08);
-  --warning: #f0a020;
+  --warning: #f0a020;        /* 警告/3xx */
   --warning-bg: rgba(240, 160, 32, 0.08);
-  --error: #d03050;
+  --error: #d03050;          /* 错误/4xx/5xx */
   --error-bg: rgba(208, 48, 80, 0.08);
-  --info: #2080f0;
+  --info: #2080f0;           /* 信息/PUT */
   --info-bg: rgba(32, 128, 240, 0.08);
 
+  /* 阴影 */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
 
+  /* 圆角 */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
 
+  /* 等宽字体栈（用于代码、URL 等） */
   --font-mono:
     "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
 }
 
+/* ===== 基础排版 ===== */
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
@@ -59,13 +94,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ===== 应用容器 ===== */
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100vh; /* 占满整个视口高度 */
 }
 
-/* ===== Header ===== */
+/* ===== 顶部栏 ===== */
 .header {
   display: flex;
   justify-content: space-between;
@@ -73,7 +109,7 @@ body {
   padding: 12px 20px;
   background: var(--bg-base);
   border-bottom: 1px solid var(--border-base);
-  flex-shrink: 0;
+  flex-shrink: 0; /* 不允许收缩 */
 }
 
 .header-brand {
@@ -99,7 +135,7 @@ body {
   gap: 8px;
 }
 
-/* ===== Tabs ===== */
+/* ===== Tab 切换栏 ===== */
 .tabs {
   display: flex;
   background: var(--bg-base);
@@ -131,6 +167,7 @@ body {
   color: var(--primary);
 }
 
+/* 激活 Tab 底部的绿色指示条 */
 .tab.active::after {
   content: "";
   position: absolute;
@@ -142,7 +179,7 @@ body {
   border-radius: 2px 2px 0 0;
 }
 
-/* ===== Panels ===== */
+/* ===== 内容面板 ===== */
 .panel {
   display: none;
   flex: 1;
@@ -154,7 +191,7 @@ body {
   display: flex;
 }
 
-/* ===== Filter Bar ===== */
+/* ===== 过滤栏 ===== */
 .filter-bar {
   display: flex;
   gap: 8px;
@@ -164,6 +201,7 @@ body {
   flex-shrink: 0;
 }
 
+/* 输入框和选择器基础样式 */
 .input,
 .select {
   flex: 1;
@@ -181,6 +219,7 @@ body {
   width: auto;
 }
 
+/* 输入框聚焦态 */
 .input:focus,
 .select:focus {
   outline: none;
@@ -192,7 +231,7 @@ body {
   color: var(--text-tertiary);
 }
 
-/* ===== Buttons ===== */
+/* ===== 按钮 ===== */
 .btn {
   padding: 7px 14px;
   border: 1px solid transparent;
@@ -212,6 +251,7 @@ body {
   flex-shrink: 0;
 }
 
+/* 主按钮（绿色） */
 .btn-primary {
   background: var(--primary);
   color: var(--text-inverse);
@@ -228,6 +268,7 @@ body {
   border-color: var(--primary-pressed);
 }
 
+/* 次要按钮（白色/灰色） */
 .btn-secondary {
   background: var(--bg-base);
   color: var(--text-base);
@@ -243,6 +284,7 @@ body {
   background: var(--bg-inset);
 }
 
+/* 图标按钮（用于删除等危险操作） */
 .btn-icon {
   background: none;
   border: none;
@@ -256,7 +298,7 @@ body {
   background: var(--error-bg);
 }
 
-/* ===== Lists ===== */
+/* ===== 列表容器 ===== */
 .request-list,
 .rule-list {
   flex: 1;
@@ -267,7 +309,7 @@ body {
   gap: 6px;
 }
 
-/* ===== Request Items ===== */
+/* ===== 请求列表项 ===== */
 .request-item {
   padding: 10px 14px;
   background: var(--bg-base);
@@ -284,6 +326,7 @@ body {
   transform: translateY(-1px);
 }
 
+/* 被拦截的请求项（绿色高亮边框和背景） */
 .request-item.intercepted {
   border-color: var(--primary);
   background: var(--primary-bg);
@@ -295,6 +338,7 @@ body {
   gap: 8px;
 }
 
+/* HTTP 方法标签（不同方法使用不同颜色） */
 .request-method {
   font-weight: 600;
   font-size: 11px;
@@ -304,27 +348,13 @@ body {
   flex-shrink: 0;
 }
 
-.method-get {
-  background: var(--success-bg);
-  color: var(--success);
-}
-.method-post {
-  background: var(--warning-bg);
-  color: #c07a00;
-}
-.method-put {
-  background: var(--info-bg);
-  color: var(--info);
-}
-.method-delete {
-  background: var(--error-bg);
-  color: var(--error);
-}
-.method-patch {
-  background: rgba(128, 0, 128, 0.08);
-  color: #800080;
-}
+.method-get { background: var(--success-bg); color: var(--success); }
+.method-post { background: var(--warning-bg); color: #c07a00; }
+.method-put { background: var(--info-bg); color: var(--info); }
+.method-delete { background: var(--error-bg); color: var(--error); }
+.method-patch { background: rgba(128, 0, 128, 0.08); color: #800080; }
 
+/* 请求 URL（等宽字体，超长截断） */
 .request-url {
   flex: 1;
   overflow: hidden;
@@ -335,6 +365,7 @@ body {
   font-family: var(--font-mono);
 }
 
+/* 状态码标签（按状态码范围着色） */
 .request-status {
   font-size: 11px;
   font-weight: 600;
@@ -343,23 +374,12 @@ body {
   flex-shrink: 0;
 }
 
-.status-2xx {
-  background: var(--success-bg);
-  color: var(--success);
-}
-.status-3xx {
-  background: var(--warning-bg);
-  color: #c07a00;
-}
-.status-4xx {
-  background: var(--error-bg);
-  color: var(--error);
-}
-.status-5xx {
-  background: var(--error-bg);
-  color: var(--error);
-}
+.status-2xx { background: var(--success-bg); color: var(--success); }
+.status-3xx { background: var(--warning-bg); color: #c07a00; }
+.status-4xx { background: var(--error-bg); color: var(--error); }
+.status-5xx { background: var(--error-bg); color: var(--error); }
 
+/* 请求耗时 */
 .request-duration {
   font-size: 11px;
   color: var(--text-tertiary);
@@ -367,6 +387,7 @@ body {
   flex-shrink: 0;
 }
 
+/* 请求时间戳 */
 .request-time {
   font-size: 11px;
   color: var(--text-tertiary);
@@ -374,7 +395,7 @@ body {
   padding-left: 0;
 }
 
-/* ===== Empty State ===== */
+/* ===== 空状态 ===== */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -386,7 +407,7 @@ body {
   gap: 8px;
 }
 
-/* ===== Rules ===== */
+/* ===== 规则管理 ===== */
 .rules-header {
   display: flex;
   justify-content: space-between;
@@ -402,12 +423,13 @@ body {
   gap: 8px;
 }
 
+/* 规则列表项 */
 .rule-item {
   padding: 14px;
   background: var(--bg-base);
   border: 1px solid var(--border-base);
   border-radius: var(--radius-md);
-  border-left: 3px solid var(--primary);
+  border-left: 3px solid var(--primary); /* 左侧绿色指示条 */
   box-shadow: var(--shadow-sm);
   transition: all 0.2s ease;
 }
@@ -416,6 +438,7 @@ body {
   box-shadow: var(--shadow-md);
 }
 
+/* 禁用状态的规则（降低透明度，灰色指示条） */
 .rule-item.disabled {
   opacity: 0.5;
   border-left-color: var(--text-tertiary);
@@ -440,6 +463,7 @@ body {
   gap: 8px;
 }
 
+/* 规则信息标签（匹配类型、URL 模式、动作类型） */
 .rule-info {
   display: flex;
   flex-wrap: wrap;
@@ -456,7 +480,7 @@ body {
   font-family: var(--font-mono);
 }
 
-/* ===== Toggle Switch ===== */
+/* ===== 开关组件（Toggle Switch） ===== */
 .toggle-switch {
   position: relative;
   width: 36px;
@@ -471,6 +495,7 @@ body {
   background: var(--primary);
 }
 
+/* 开关圆形滑块 */
 .toggle-switch::after {
   content: "";
   position: absolute;
@@ -485,10 +510,10 @@ body {
 }
 
 .toggle-switch.active::after {
-  left: 18px;
+  left: 18px; /* 激活时滑块向右移动 */
 }
 
-/* ===== Modal ===== */
+/* ===== 弹窗（Modal） ===== */
 .modal {
   position: fixed;
   top: 0;
@@ -496,7 +521,7 @@ body {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px); /* 背景毛玻璃效果 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -505,12 +530,8 @@ body {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal.hidden {
@@ -531,25 +552,13 @@ body {
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes toastIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .modal-header {
@@ -566,6 +575,7 @@ body {
   color: var(--text-base);
 }
 
+/* 弹窗关闭按钮 */
 .modal-close {
   background: none;
   border: none;
@@ -604,7 +614,7 @@ body {
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
-/* ===== Forms ===== */
+/* ===== 表单 ===== */
 .form-group {
   margin-bottom: 16px;
 }
@@ -639,6 +649,7 @@ body {
   height: 14px;
 }
 
+/* 多行文本输入框（用于 JSON 数据） */
 .textarea {
   width: 100%;
   padding: 10px 12px;
@@ -663,11 +674,12 @@ body {
   color: var(--text-tertiary);
 }
 
+/* 拦截动作配置区域（按 action 类型显示/隐藏） */
 .action-section.hidden {
   display: none;
 }
 
-/* ===== Detail Tabs ===== */
+/* ===== 详情弹窗 Tab 切换 ===== */
 .detail-tabs {
   display: flex;
   gap: 4px;
@@ -700,7 +712,7 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-/* ===== Detail Content ===== */
+/* ===== 详情内容区域 ===== */
 .detail-content {
   font-family: var(--font-mono);
   font-size: 12px;
@@ -739,7 +751,7 @@ body {
   font-size: 12px;
 }
 
-/* ===== Scrollbar ===== */
+/* ===== 自定义滚动条 ===== */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -757,7 +769,7 @@ body {
   background: var(--text-tertiary);
 }
 
-/* ===== Selection ===== */
+/* ===== 文字选中样式 ===== */
 ::selection {
   background: var(--primary-bg-hover);
   color: var(--text-base);

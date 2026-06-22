@@ -1,3 +1,18 @@
+<!--
+  sidepanel/sidepanel.html
+
+  Vakao 扩展的 Side Panel（侧边栏面板）主页面。
+  这是扩展的用户界面入口，包含以下核心区域：
+
+  1. 顶部栏（Header）：品牌标识 + 操作按钮（清空请求、规则管理）
+  2. Tab 切换：请求列表 / 拦截规则
+  3. 请求列表面板：过滤栏 + 请求列表
+  4. 规则管理面板：操作按钮 + 规则列表
+  5. 请求详情弹窗：概览/请求头/请求体/响应 + 操作按钮
+  6. 规则编辑弹窗：规则表单（支持 mock/modify/redirect 三种动作）
+
+  通信方式：通过 sidepanel.js 与 background service-worker.js 通信。
+-->
 <!doctype html>
 <html lang="zh-CN">
   <head>
@@ -7,9 +22,14 @@
     <link rel="stylesheet" href="./sidepanel.css" />
   </head>
   <body>
+    <!-- 主应用容器，使用 Flexbox 纵向布局占满整个视口 -->
     <div class="app">
+
+      <!-- ===== 顶部栏 ===== -->
       <header class="header">
+        <!-- 品牌标识：SVG 图标 + 标题 -->
         <div class="header-brand">
+          <!-- 层叠图标 SVG（表示网络请求的层叠关系） -->
           <svg
             viewBox="0 0 24 24"
             width="20"
@@ -27,8 +47,12 @@
           </svg>
           <h1>Vakao</h1>
         </div>
+
+        <!-- 操作按钮组 -->
         <div class="header-actions">
+          <!-- 清空请求按钮 -->
           <button id="clearRequests" class="btn btn-secondary" title="清空请求">
+            <!-- 垃圾桶图标 SVG -->
             <svg
               viewBox="0 0 24 24"
               width="14"
@@ -46,7 +70,10 @@
             </svg>
             清空
           </button>
+
+          <!-- 规则管理按钮（点击跳转到规则 Tab） -->
           <button id="openRules" class="btn btn-primary">
+            <!-- 齿轮设置图标 SVG -->
             <svg
               viewBox="0 0 24 24"
               width="14"
@@ -67,12 +94,15 @@
         </div>
       </header>
 
+      <!-- ===== Tab 切换栏 ===== -->
       <div class="tabs">
         <button class="tab active" data-tab="requests">请求列表</button>
         <button class="tab" data-tab="rules">拦截规则</button>
       </div>
 
+      <!-- ===== 请求列表面板 ===== -->
       <div id="requestsPanel" class="panel active">
+        <!-- 过滤栏：URL 关键字 / HTTP 方法 / 状态码范围 -->
         <div class="filter-bar">
           <input
             type="text"
@@ -96,7 +126,10 @@
             <option value="5xx">5xx</option>
           </select>
         </div>
+
+        <!-- 请求列表容器（由 sidepanel.js 动态渲染） -->
         <div id="requestList" class="request-list">
+          <!-- 空状态占位符 -->
           <div class="empty-state">
             <svg
               viewBox="0 0 24 24"
@@ -118,9 +151,13 @@
         </div>
       </div>
 
+      <!-- ===== 规则管理面板 ===== -->
       <div id="rulesPanel" class="panel">
+        <!-- 规则操作栏：添加规则 + 导入/导出 -->
         <div class="rules-header">
+          <!-- 添加规则按钮 -->
           <button id="addRule" class="btn btn-primary">
+            <!-- 加号图标 SVG -->
             <svg
               viewBox="0 0 24 24"
               width="14"
@@ -137,7 +174,9 @@
             添加规则
           </button>
           <div class="rules-actions">
+            <!-- 导入规则按钮 -->
             <button id="importRules" class="btn btn-secondary">
+              <!-- 下载图标 SVG -->
               <svg
                 viewBox="0 0 24 24"
                 width="14"
@@ -154,7 +193,9 @@
               </svg>
               导入
             </button>
+            <!-- 导出规则按钮 -->
             <button id="exportRules" class="btn btn-secondary">
+              <!-- 上传图标 SVG -->
               <svg
                 viewBox="0 0 24 24"
                 width="14"
@@ -173,7 +214,10 @@
             </button>
           </div>
         </div>
+
+        <!-- 规则列表容器（由 sidepanel.js 动态渲染） -->
         <div id="ruleList" class="rule-list">
+          <!-- 空状态占位符 -->
           <div class="empty-state">
             <svg
               viewBox="0 0 24 24"
@@ -196,6 +240,7 @@
       </div>
     </div>
 
+    <!-- ===== 请求详情弹窗 ===== -->
     <div id="requestDetail" class="modal hidden">
       <div class="modal-content">
         <div class="modal-header">
@@ -203,6 +248,7 @@
           <button class="modal-close">&times;</button>
         </div>
         <div class="modal-body">
+          <!-- 详情内容 Tab 切换（概览/请求头/请求体/响应） -->
           <div class="detail-tabs">
             <button class="detail-tab active" data-detail-tab="overview">
               概览
@@ -211,9 +257,11 @@
             <button class="detail-tab" data-detail-tab="body">请求体</button>
             <button class="detail-tab" data-detail-tab="response">响应</button>
           </div>
+          <!-- 详情内容容器（由 sidepanel.js 动态渲染） -->
           <div id="detailContent" class="detail-content"></div>
         </div>
         <div class="modal-footer">
+          <!-- 从请求创建 Mock 规则 -->
           <button id="mockFromRequest" class="btn btn-primary">
             <svg
               viewBox="0 0 24 24"
@@ -232,6 +280,7 @@
             </svg>
             Mock 此请求
           </button>
+          <!-- 从请求创建 Modify 规则 -->
           <button id="modifyFromRequest" class="btn btn-primary">
             <svg
               viewBox="0 0 24 24"
@@ -252,12 +301,15 @@
             </svg>
             修改此请求
           </button>
+          <!-- 复制为 cURL 命令 -->
           <button id="copyCurl" class="btn btn-secondary">复制 cURL</button>
+          <!-- 复制响应体 -->
           <button id="copyResponse" class="btn btn-secondary">复制响应</button>
         </div>
       </div>
     </div>
 
+    <!-- ===== 规则编辑弹窗 ===== -->
     <div id="ruleModal" class="modal hidden">
       <div class="modal-content">
         <div class="modal-header">
@@ -266,7 +318,10 @@
         </div>
         <div class="modal-body">
           <form id="ruleForm">
+            <!-- 规则 ID（隐藏字段，用于区分新建/编辑） -->
             <input type="hidden" id="ruleId" />
+
+            <!-- 规则名称 -->
             <div class="form-group">
               <label for="ruleName">规则名称</label>
               <input
@@ -277,6 +332,8 @@
                 placeholder="例如：Mock 用户接口"
               />
             </div>
+
+            <!-- URL 匹配模式 -->
             <div class="form-group">
               <label for="ruleUrlPattern">URL 匹配模式</label>
               <input
@@ -287,6 +344,8 @@
                 placeholder="例如：/api/user 或 https://example.com/api/*"
               />
             </div>
+
+            <!-- 匹配类型：包含 或 正则表达式 -->
             <div class="form-group">
               <label for="ruleMatchType">匹配类型</label>
               <select id="ruleMatchType" class="select">
@@ -294,6 +353,8 @@
                 <option value="regex">正则表达式</option>
               </select>
             </div>
+
+            <!-- HTTP 方法多选（限制规则生效的请求方法） -->
             <div class="form-group">
               <label for="ruleMethods">HTTP 方法（可多选）</label>
               <div class="checkbox-group">
@@ -324,6 +385,8 @@
                 >
               </div>
             </div>
+
+            <!-- 拦截动作选择 -->
             <div class="form-group">
               <label for="ruleAction">拦截动作</label>
               <select id="ruleAction" class="select">
@@ -332,6 +395,8 @@
                 <option value="redirect">重定向</option>
               </select>
             </div>
+
+            <!-- Mock 响应配置区域 -->
             <div id="mockSection" class="action-section">
               <div class="form-group">
                 <label for="mockStatus">响应状态码</label>
@@ -363,6 +428,8 @@
                 ></textarea>
               </div>
             </div>
+
+            <!-- 修改请求配置区域（默认隐藏） -->
             <div id="modifySection" class="action-section hidden">
               <div class="form-group">
                 <label for="modifyQuery">修改 Query 参数（JSON）</label>
@@ -392,6 +459,8 @@
                 ></textarea>
               </div>
             </div>
+
+            <!-- 重定向配置区域（默认隐藏） -->
             <div id="redirectSection" class="action-section hidden">
               <div class="form-group">
                 <label for="redirectUrl">重定向 URL</label>
@@ -412,6 +481,7 @@
       </div>
     </div>
 
+    <!-- 隐藏的文件选择器（用于导入规则 JSON 文件） -->
     <input
       type="file"
       id="importFileInput"
@@ -419,6 +489,7 @@
       style="display: none"
     />
 
+    <!-- 加载侧边栏交互逻辑 -->
     <script src="./sidepanel.js"></script>
   </body>
 </html>
